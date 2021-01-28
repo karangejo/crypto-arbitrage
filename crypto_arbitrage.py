@@ -42,6 +42,8 @@ def get_coin_pair_data(exclude=[], include_exchanges=[], include_coins=[]):
             continue
     return (coin_data)
 
+# TODO something wrong with spread calculation
+
 
 def coins_by_spread(coins, min_volume=5000):
     coins_spread = []
@@ -49,13 +51,19 @@ def coins_by_spread(coins, min_volume=5000):
         print(coin["name"])
         prices = []
         for m in coin['market data']:
-            print(m)
             vol = m['volume']
             if vol >= min_volume:
-                prices.append(m['price'])
+                prices.append({'price': m['price'], 'market': m['market']})
         if len(prices) > 1:
-            spread = ((max(prices) - min(prices)) / min(prices)) * 100
-            coins_spread.append({'name': coin['name'], 'spread': spread})
+            max_price = max(list(map(lambda x: x["price"], prices)))
+            min_price = min(list(map(lambda x: x["price"], prices)))
+            max_market = [x['market']
+                          for x in prices if x['price'] == max_price]
+            min_market = [x['market']
+                          for x in prices if x['price'] == min_price]
+            spread = ((max_price - min_price) / min_price) * 100
+            coins_spread.append(
+                {'name': coin['name'], 'spread': spread, 'max_market': max_market, 'min_market': min_market, 'max_price': max_price, 'min_price': min_price})
     coins_spread.sort(key=operator.itemgetter('spread'))
     return (coins_spread)
 
@@ -93,3 +101,4 @@ def main():
     for coin in coins_spread:
         spread = 'spread: ' + str(coin['spread'])[:4] + '%'
         print(coin['name'], spread)
+        print(coin)
